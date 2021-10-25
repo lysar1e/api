@@ -48,8 +48,8 @@ export class AuthService {
         const accessToken = await this.generateAccessToken(user.id);
         const refreshToken = await this.generateRefreshToken(user.id);
 
-        response.cookie("access", accessToken, { httpOnly: true });
-        response.cookie("refresh", refreshToken, { httpOnly: true });
+        response.cookie("access", accessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
+        response.cookie("refresh", refreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
         user.refreshToken = refreshToken;
         await user.save();
         return { message: "success" };
@@ -95,8 +95,8 @@ export class AuthService {
         const newRefreshToken = await this.generateRefreshToken(validated.id);
         user.refreshToken = newRefreshToken;
         await user.save();
-        response.cookie("access", newAccessToken, { httpOnly: true });
-        response.cookie("refresh", newRefreshToken, { httpOnly: true });
+        response.cookie("access", newAccessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
+        response.cookie("refresh", newRefreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
         return { message: "success" };
     }
     async logout(response: Response) {
@@ -114,7 +114,7 @@ export class AuthService {
             email: user.email,
             id: user.id
         }, {secret,expiresIn: "15m"});
-        const link = `http://localhost:3000/reset-password/${user.id}/${token}`;
+        const link = `https://fasfafsa.fun/reset-password/${user.id}/${token}`;
         console.log(link);
         await this.mailService.sendResetPassword(user.email, link);
         return {message: "success"}
