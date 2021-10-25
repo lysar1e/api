@@ -100,8 +100,8 @@ export class AuthService {
         return { message: "success" };
     }
     async logout(response: Response) {
-        response.clearCookie("refresh");
-        response.clearCookie("access");
+        response.clearCookie("refresh", {domain: ".fasfafsa.fun", path: "/"});
+        response.clearCookie("access", {domain: ".fasfafsa.fun", path: "/"});
         return { message: "success" };
     }
     async forgotPassword(email: string) {
