@@ -17,7 +17,7 @@ import { MailModule } from './mail/mail.module';
       host: 'tai.db.elephantsql.com',
       port: 5432,
       username: 'pspgdsec',
-      password: 'rRzvwdfMhobjtFx4OH9K2IozJDyIfEpm-RSZ2xkTusoDZ_GQuiU',
+      password: 'rRzvwdfMhobjtFx4OH9K2IozJDyIfEpm',
       database: 'pspgdsec',
       entities: [User, Board, Link],
       synchronize: false,
