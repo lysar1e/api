@@ -24,6 +24,5 @@ jobs:
         cache: 'npm'
     - run: yarn install
     - run: yarn build
-    - run: pm2 stop api
-    - run: pm2 start --name api-new /root/api/api/api/api/dist/main.js
+    - run: pm2 reload api-new
     
