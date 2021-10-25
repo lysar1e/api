@@ -11,7 +11,7 @@ import {Response} from "express";
 @Injectable()
 export class LinkService {
     constructor(@InjectRepository(Link) private linkRepository: typeof Link, @InjectRepository(Board) private boardRepository: typeof Board) {}
-        url = 'http://localhost:3000';
+        url = 'https://fasfafsa.fun';
 
     async generateLink(dto: GenerateLinkDto) {
         const {boardId} = dto;
