@@ -14,14 +14,13 @@ import { MailModule } from './mail/mail.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'ec2-52-213-119-221.eu-west-1.compute.amazonaws.com',
+      host: 'localhost',
       port: 5432,
-      username: 'qhjbsdydtewzog',
-      password: 'd352fbb87fbbbacbe2a40ace8472167c6247dee7df936d3be3279d3a7fb95cc4',
-      database: 'dam98c4s5aj6hb',
+      username: 'fasfafsa_user',
+      password: 'fasfafsa',
+      database: 'fasfafsa_db',
       entities: [User, Board, Link],
-      synchronize: false,
-      ssl: { rejectUnauthorized: false },
+      synchronize: true
     }),
     AuthModule,
     BoardModule,
