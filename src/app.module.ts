@@ -14,13 +14,14 @@ import { MailModule } from './mail/mail.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'tai.db.elephantsql.com',
+      host: 'ec2-52-213-119-221.eu-west-1.compute.amazonaws.com',
       port: 5432,
-      username: 'pspgdsec',
-      password: 'rRzvwdfMhobjtFx4OH9K2IozJDyIfEpm',
-      database: 'pspgdsec',
+      username: 'qhjbsdydtewzog',
+      password: 'd352fbb87fbbbacbe2a40ace8472167c6247dee7df936d3be3279d3a7fb95cc4',
+      database: 'dam98c4s5aj6hb',
       entities: [User, Board, Link],
       synchronize: false,
+      ssl: { rejectUnauthorized: false },
     }),
     AuthModule,
     BoardModule,
