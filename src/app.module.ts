@@ -20,7 +20,7 @@ import { MailModule } from './mail/mail.module';
       password: 'fasfafsa',
       database: 'fasfafsa_db',
       entities: [User, Board, Link],
-      synchronize: true
+      synchronize: false
     }),
     AuthModule,
     BoardModule,
