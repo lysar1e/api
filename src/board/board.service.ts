@@ -1,9 +1,7 @@
 import {
     BadRequestException,
     ForbiddenException,
-    Injectable,
-    InternalServerErrorException,
-    NotFoundException
+    Injectable
 } from '@nestjs/common';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
@@ -12,7 +10,6 @@ import {Board} from "./entities/board.entity";
 import {CreateTodoDto} from "./dto/create-todo.dto";
 import { v4 as uuidv4 } from 'uuid';
 import {DeleteTodoDto} from "./dto/delete-todo.dto";
-import {In, Not} from "typeorm";
 
 @Injectable()
 export class BoardService {
@@ -28,6 +25,9 @@ export class BoardService {
         const board = await this.boardRepository.findOne(createTodoDto.boardId);
         if (!board.contributors.includes(owner) && board.owner !== owner) {
             throw new ForbiddenException("Ты не можешь создать за другого пользователя!");
+        }
+        if (!createTodoDto.text) {
+            throw new BadRequestException("Невозможно добавить пустую задачу!");
         }
         const id = await uuidv4();
         const todoObj = {
@@ -103,4 +103,4 @@ export class BoardService {
         await board.save();
         return {message: "success"};
   }
-}
+}  
