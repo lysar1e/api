@@ -18,7 +18,7 @@ export class AuthService {
     async singUpUser(dto: CreateUserDto) {
         const { email, password } = dto;
         if (!email || !password) {
-            throw new BadRequestException();
+            throw new BadRequestException("Данные не могут быть пустыми!");
         }
         const isEmailUsed = await this.userRepository.findOne({ email });
         if (isEmailUsed) {
@@ -38,18 +38,18 @@ export class AuthService {
         const { email, password } = dto;
         const user = await this.userRepository.findOne({ email });
         if (!user) {
-            throw new BadRequestException("Такого пользователя не существует!");
+            throw new BadRequestException("Адрес электронной почты / пароль не совпадают.");
         }
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            throw new BadRequestException("Неверный пароль!");
+            throw new BadRequestException("Адрес электронной почты / пароль не совпадают.");
         }
 
         const accessToken = await this.generateAccessToken(user.id);
         const refreshToken = await this.generateRefreshToken(user.id);
 
-        response.cookie("access", accessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        response.cookie("refresh", refreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
+        response.cookie("access", accessToken, { httpOnly: true });
+        response.cookie("refresh", refreshToken, { httpOnly: true });
         user.refreshToken = refreshToken;
         await user.save();
         return { message: "success" };
@@ -95,13 +95,13 @@ export class AuthService {
         const newRefreshToken = await this.generateRefreshToken(validated.id);
         user.refreshToken = newRefreshToken;
         await user.save();
-        response.cookie("access", newAccessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        response.cookie("refresh", newRefreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
+        response.cookie("access", newAccessToken, { httpOnly: true });
+        response.cookie("refresh", newRefreshToken, { httpOnly: true });
         return { message: "success" };
     }
     async logout(response: Response) {
-        response.clearCookie("refresh", {domain: ".fasfafsa.fun", path: "/"});
-        response.clearCookie("access", {domain: ".fasfafsa.fun", path: "/"});
+        await response.clearCookie("refresh");
+        await response.clearCookie("access");
         return { message: "success" };
     }
     async forgotPassword(email: string) {
