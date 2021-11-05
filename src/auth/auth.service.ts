@@ -109,8 +109,8 @@ export class AuthService {
             throw new UnauthorizedException("You are not authenticated!");
         }
         if (!tokenToValidate || tokenToValidate.refresh_exp < currentDate || tokenToValidate.user_id !== userIdFromRequest) {
-            response.clearCookie("refresh");
-            response.clearCookie("access");
+            response.clearCookie("refresh", {domain: process.env.DOMAIN, path: "/"});
+            response.clearCookie("access", {domain: process.env.DOMAIN, path: "/"});
             throw new ForbiddenException("Refresh token is not valid!");
         }
         // const validated = await this.jwtService.verifyAsync(refreshToken, {
