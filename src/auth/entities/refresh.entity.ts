@@ -1,22 +1,27 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity("users")
-export class User extends BaseEntity {
+@Entity("refresh")
+export class Refresh extends BaseEntity {
     @PrimaryGeneratedColumn({
         comment: "unique identifier",
     })
     id: number;
 
     @Column({
-        type: "text",
+        type: "integer",
         nullable: false,
-        unique: true,
     })
-    email: string;
+    user_id: number;
 
     @Column({
         type: "text",
         nullable: false,
     })
-    password: string;
+    refresh_token: string;
+
+    @Column({
+        type: "text",
+        default: 0,
+    })
+    refresh_exp: string;
 }

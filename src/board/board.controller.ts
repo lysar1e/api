@@ -1,7 +1,6 @@
 import {Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query} from '@nestjs/common';
 import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
-import { UpdateBoardDto } from './dto/update-board.dto';
 import {AuthGuard} from "@nestjs/passport";
 import {Request} from "express";
 import {CreateTodoDto} from "./dto/create-todo.dto";

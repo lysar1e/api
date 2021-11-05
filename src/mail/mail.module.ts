@@ -7,7 +7,7 @@ import { join } from 'path';
 @Module({
   imports: [
     MailerModule.forRoot({
-      transport: 'smtp://fasfafsa.fun@gmail.com:approach@smtp.gmail.com',
+      transport: "smtp://fasfafsa.fun@gmail.com:approach@smtp.gmail.com",
       defaults: {
         from: '"FasfafsaFun" <fasfafsa.fun@gmail.com>'
       },

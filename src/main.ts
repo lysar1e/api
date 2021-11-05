@@ -5,9 +5,10 @@ import {NestExpressApplication} from "@nestjs/platform-express";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const PORT = process.env.PORT || 8800;
   app.use(cookieParser());
   app.disable('x-powered-by');
-  app.enableCors({ origin: 'https://fasfafsa.fun', credentials: true });
-  await app.listen(8800);
+  app.enableCors({ origin: process.env.CLIENT_URL, credentials: true });
+  await app.listen(PORT);
 }
 bootstrap();

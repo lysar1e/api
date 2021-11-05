@@ -28,11 +28,19 @@ export class AuthController {
         return this.authService.getUserData(request.user);
     }
 
+
     @Get("reset-password/:id/:token")
     resetPassword(@Param() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto);
     }
 
+    @UseGuards(AuthGuard("jwt"))
+    @Get("check")
+    checkAccessTokenValidity() {
+        return {message: "ok"};
+    }
+
+    @UseGuards(AuthGuard("auth"))
     @Post("refresh")
     refreshToken(
         @Req() request: Request,
@@ -41,13 +49,15 @@ export class AuthController {
         return this.authService.refreshToken(request, response);
     }
     @Post("logout")
-    logout(@Res({ passthrough: true }) response: Response) {
-        return this.authService.logout(response);
+    logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+        return this.authService.logout(request, response);
     }
+
     @Post("forgot-password")
     forgotPassword(@Body('email') email: string) {
         return this.authService.forgotPassword(email);
     }
+
     @Post("reset-password/:id/:token")
     resetPasswordPost(@Body('password') password: string, @Param() dto: ResetPasswordDto) {
         return this.authService.resetPasswordPost(password, dto);

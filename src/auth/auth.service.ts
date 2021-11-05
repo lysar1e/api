@@ -6,12 +6,17 @@ import {InjectRepository} from "@nestjs/typeorm";
 import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { uid } from 'rand-token';
 import {ResetPasswordDto} from "./dto/reset-password.dto";
 import { MailService } from 'src/mail/mail.service';
+import * as moment from "moment";
+import {Refresh} from "./entities/refresh.entity";
+
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User) private userRepository: typeof User,
+        @InjectRepository(Refresh) private refreshTokenRepository: typeof Refresh,
         private jwtService: JwtService,
         private mailService: MailService
     ) {}
@@ -46,29 +51,43 @@ export class AuthService {
         }
 
         const accessToken = await this.generateAccessToken(user.id);
-        const refreshToken = await this.generateRefreshToken(user.id);
-
-        response.cookie("access", accessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        response.cookie("refresh", refreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        user.refreshToken = refreshToken;
-        await user.save();
+        const {refreshToken, refreshTokenExp} = await this.generateRefreshToken();
+        await this.refreshTokenRepository
+            .create({
+                user_id: user.id,
+                refresh_token: refreshToken,
+                refresh_exp: refreshTokenExp
+            })
+            .save();
+        response.cookie("access", accessToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, domain: process.env.DOMAIN, secure: JSON.parse(process.env.SECURE) });
+        response.cookie("refresh", refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, domain: process.env.DOMAIN, secure: JSON.parse(process.env.SECURE) });
+        // user.refreshToken = refreshToken;
+        // await user.save();
         return { message: "success" };
     }
 
     async generateAccessToken(userId: number) {
         return await this.jwtService.signAsync(
             { id: userId },
-            { expiresIn: "20m" }
+            { expiresIn: "10s" }
         );
     }
-    async generateRefreshToken(userId: number) {
-        return await this.jwtService.signAsync(
-            { id: userId },
-            {
-                secret: "refresh",
-                expiresIn: "200d",
-            }
-        );
+    async generateRefreshToken() {
+        const refreshToken = uid(64);
+        const refreshTokenExp = moment().day(200).format("YYYY/MM/DD");
+        // Math.floor(Date.now() / 990);
+        const refreshTokenData = {
+            refreshToken,
+            refreshTokenExp
+        }
+        // return await this.jwtService.signAsync(
+        //     { id: userId },
+        //     {
+        //         secret: "refresh",
+        //         expiresIn: "200d",
+        //     }
+        // );
+        return refreshTokenData;
     }
     async getUserData(payload: Express.User) {
         // @ts-ignore
@@ -80,28 +99,42 @@ export class AuthService {
         return { id: user.id, logged: true };
     }
     async refreshToken(request: Request, response: Response) {
-        const refreshToken = await request.cookies["refresh"];
-        const user = await this.userRepository.findOne({ refreshToken });
-        if (!refreshToken) {
+        // @ts-ignore
+        const userIdFromRequest = request.user.id;
+        // const currentDate = Math.floor(Date.now() / 1000);
+        const currentDate = moment().format("YYYY/MM/DD")
+        const refreshTokenFromCookie = await request.cookies["refresh"];
+        const tokenToValidate = await this.refreshTokenRepository.findOne({where: {refresh_token: refreshTokenFromCookie}});
+        if (!refreshTokenFromCookie || !userIdFromRequest) {
             throw new UnauthorizedException("You are not authenticated!");
         }
-        if (!user) {
+        if (!tokenToValidate || tokenToValidate.refresh_exp < currentDate || tokenToValidate.user_id !== userIdFromRequest) {
+            response.clearCookie("refresh");
+            response.clearCookie("access");
             throw new ForbiddenException("Refresh token is not valid!");
         }
-        const validated = await this.jwtService.verifyAsync(refreshToken, {
-            secret: "refresh",
-        });
-        const newAccessToken = await this.generateAccessToken(validated.id);
-        const newRefreshToken = await this.generateRefreshToken(validated.id);
-        user.refreshToken = newRefreshToken;
-        await user.save();
-        response.cookie("access", newAccessToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        response.cookie("refresh", newRefreshToken, { httpOnly: true, domain: ".fasfafsa.fun", secure: true });
-        return { message: "success" };
+        // const validated = await this.jwtService.verifyAsync(refreshToken, {
+        //     secret: "refresh",
+        // });
+        const newAccessToken = await this.generateAccessToken(tokenToValidate.user_id);
+        const {refreshToken, refreshTokenExp} = await this.generateRefreshToken();
+        // tokenToValidate.status = RefreshTokenStatus.used;
+        await tokenToValidate.remove();
+        await this.refreshTokenRepository.create({user_id: userIdFromRequest, refresh_token: refreshToken, refresh_exp: refreshTokenExp}).save();
+
+        // user.refreshToken = newRefreshToken;
+        // await user.save();
+        response.cookie("access", newAccessToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, domain: process.env.DOMAIN, secure: JSON.parse(process.env.SECURE)});
+        response.cookie("refresh", refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, domain: process.env.DOMAIN, secure: JSON.parse(process.env.SECURE)});
+        return { message: "success", logged: true };
     }
-    async logout(response: Response) {
-        await response.clearCookie("refresh", {domain: ".fasfafsa.fun", path: "/"});
-        await response.clearCookie("access", {domain: ".fasfafsa.fun", path: "/"});
+    async logout(request: Request,response: Response) {
+        const refreshToken = await this.refreshTokenRepository.findOne({refresh_token: request.cookies["refresh"]});
+        if (refreshToken) {
+            await refreshToken.remove();
+        }
+        await response.clearCookie("refresh", {domain: process.env.DOMAIN, path: "/"});
+        await response.clearCookie("access", {domain: process.env.DOMAIN, path: "/"});
         return { message: "success" };
     }
     async forgotPassword(email: string) {
@@ -109,12 +142,12 @@ export class AuthService {
         if (!user) {
             throw new BadRequestException("Такого пользователя не существует!")
         };
-        const secret = "fsafsafsajpisaf" + user.password;
+        const secret = process.env.FORGOT_PASSWORD_SECRET + user.password;
         const token = await this.jwtService.signAsync({
             email: user.email,
             id: user.id
         }, {secret,expiresIn: "15m"});
-        const link = `https://fasfafsa.fun/reset-password/${user.id}/${token}`;
+        const link = `${process.env.CLIENT_URL}/reset-password/${user.id}/${token}`;
         console.log(link);
         await this.mailService.sendResetPassword(user.email, link);
         return {message: "success"}
@@ -125,7 +158,7 @@ export class AuthService {
         if (!user) {
             throw new BadRequestException("Неверный параметр идентификатора!");
         }
-        const secret = "fsafsafsajpisaf" + user.password;
+        const secret = process.env.FORGOT_PASSWORD_SECRET + user.password;
         try {
             const validated = await this.jwtService.verifyAsync(token, {
                 secret
@@ -142,7 +175,11 @@ export class AuthService {
         if (!user) {
             throw new BadRequestException("Неверный параметр идентификатора!");
         }
-        const secret = "fsafsafsajpisaf" + user.password;
+        const userRefreshTokens = await this.refreshTokenRepository.find({where: {user_id: id}});
+        if (userRefreshTokens) {
+            await this.refreshTokenRepository.remove(userRefreshTokens);
+        }
+        const secret = process.env.FORGOT_PASSWORD_SECRET + user.password;
         try {
             const validated = await this.jwtService.verifyAsync(token, {
                 secret

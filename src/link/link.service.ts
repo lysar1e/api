@@ -5,19 +5,17 @@ import {GenerateLinkDto} from "./dto/generate-link.dto";
 import * as shortid from "shortid";
 import {JoinBoardDto} from "./dto/join-board.dto";
 import {Board} from "../board/entities/board.entity";
-import {Response} from "express";
 
 
 @Injectable()
 export class LinkService {
     constructor(@InjectRepository(Link) private linkRepository: typeof Link, @InjectRepository(Board) private boardRepository: typeof Board) {}
-        url = 'https://fasfafsa.fun';
 
     async generateLink(dto: GenerateLinkDto) {
         const {boardId} = dto;
         const board = await this.boardRepository.findOne({where: {id: boardId}});
         const code = shortid.generate();
-        const to = this.url + '/invite/' + code;
+        const to = process.env.CLIENT_URL + '/invite/' + code;
         const generatedLink = await this.linkRepository.create({code, board_id: boardId, to}).save();
         board.generatedLink = to;
         await board.save();

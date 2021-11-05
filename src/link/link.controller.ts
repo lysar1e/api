@@ -1,6 +1,6 @@
 import {Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, Res} from '@nestjs/common';
 import {AuthGuard} from "@nestjs/passport";
-import {Request, Response} from "express";
+import {Request} from "express";
 import {GenerateLinkDto} from "./dto/generate-link.dto";
 import { LinkService } from './link.service';
 import {JoinBoardDto} from "./dto/join-board.dto";
