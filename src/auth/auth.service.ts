@@ -69,7 +69,11 @@ export class AuthService {
     async generateAccessToken(userId: number) {
         return await this.jwtService.signAsync(
             { id: userId },
+<<<<<<< HEAD
             { expiresIn: "10s" }
+=======
+            { expiresIn: "20m" }
+>>>>>>> master
         );
     }
     async generateRefreshToken() {
