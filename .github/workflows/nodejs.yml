@@ -24,19 +24,19 @@ jobs:
         cache: 'npm'
     - name: Create env file
       run: |
-          touch .production.env
-          echo PORT=${{ secrets.PORT }}" > .production.env
-          echo POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} > .production.env
-          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} > .production.env
-          echo POSTGRES_DB=${{ secrets.POSTGRES_DB }} > .production.env
-          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} > .production.env
-          echo POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} > .production.env
-          echo JWT_SECRET=${{ secrets.JWT_SECRET }} > .production.env
-          echo FORGOT_PASSWORD_SECRET=${{ secrets.FORGOT_PASSWORD_SECRET }} > .production.env
-          echo CLIENT_URL=${{ secrets.CLIENT_URL }} > .production.env
-          echo SECURE=${{ secrets.SECURE }} > .production.env
-          echo DOMAIN=${{ secrets.DOMAIN }} > .production.env
-          cat .production.env
+          cat << EOF > .production.env
+          PORT=${{ secrets.PORT }}
+          POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FORGOT_PASSWORD_SECRET=${{ secrets.FORGOT_PASSWORD_SECRET }}
+          CLIENT_URL=${{ secrets.CLIENT_URL }}
+          SECURE=${{ secrets.SECURE }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          EOF
     - run: yarn install
     - run: yarn build
     - run: pm2 reload api-new
