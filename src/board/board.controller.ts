@@ -55,4 +55,11 @@ export class BoardController {
   remove(@Query() dto: DeleteTodoDto) {
     return this.boardService.remove(dto);
   }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Delete('/delete-board/:id')
+  deleteBoard(@Param('id') id: string, @Req() request: Request) {
+    // @ts-ignore
+    return this.boardService.deleteBoard(+id, request.user.id);
+  }
 }

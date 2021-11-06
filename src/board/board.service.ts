@@ -102,4 +102,19 @@ export class BoardService {
         await board.save();
         return {message: "success"};
   }
+  async deleteBoard(boardId: number, userId: number) {
+    const board = await this.boardRepository.findOne(boardId);
+      if (board.owner !== userId) {
+          throw new ForbiddenException("Ты не можешь удалить доску за другого пользователя!");
+      }
+    await board.remove();
+    return {message: "Доска удалена"}
+  }
+
+  // async validateUser(board: Board, userId: number) {
+  //     if (!board.contributors.includes(userId) && board.owner !== userId) {
+  //         throw new ForbiddenException("Ты не можешь создать за другого пользователя!");
+  //         return;
+  //     }
+  // }
 }
