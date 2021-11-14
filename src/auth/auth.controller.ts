@@ -5,6 +5,7 @@ import { SignInDto } from "./dto/sign-in.dto";
 import {Response, Request} from "express";
 import { AuthGuard } from "@nestjs/passport";
 import {ResetPasswordDto} from "./dto/reset-password.dto";
+import { RolesGuard } from "./decorators/roles.guard";
 
 @Controller("auth")
 export class AuthController {
@@ -36,8 +37,9 @@ export class AuthController {
 
     @UseGuards(AuthGuard("jwt"))
     @Get("check")
-    checkAccessTokenValidity() {
-        return {message: "ok"};
+    checkAccessTokenValidity(@Req() request: Request) {
+        //@ts-ignore
+        return {message: "ok", role: request.user.role};
     }
 
     @UseGuards(AuthGuard("auth"))
@@ -61,5 +63,17 @@ export class AuthController {
     @Post("reset-password/:id/:token")
     resetPasswordPost(@Body('password') password: string, @Param() dto: ResetPasswordDto) {
         return this.authService.resetPasswordPost(password, dto);
+    }
+
+    @UseGuards(AuthGuard("jwt"), RolesGuard)
+    @Get("admin/get-users")
+    getUsers() {
+        return this.authService.getUsers();
+    }
+
+    @UseGuards(AuthGuard("jwt"), RolesGuard)
+    @Post("/admin/issue-admin-role")
+    issueRole(@Body('userId') userId: string) {
+        return this.authService.issueAdminRole(+userId);
     }
 }

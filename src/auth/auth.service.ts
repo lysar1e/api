@@ -49,12 +49,12 @@ export class AuthService {
         if (!isMatch) {
             throw new BadRequestException("Адрес электронной почты / пароль не совпадают.");
         }
-
-        const accessToken = await this.generateAccessToken(user.id);
+        const accessToken = await this.generateAccessToken(user.id, user.role);
         const {refreshToken, refreshTokenExp} = await this.generateRefreshToken();
         await this.refreshTokenRepository
             .create({
                 user_id: user.id,
+                user_role: user.role,
                 refresh_token: refreshToken,
                 refresh_exp: refreshTokenExp
             })
@@ -66,9 +66,9 @@ export class AuthService {
         return { message: "success" };
     }
 
-    async generateAccessToken(userId: number) {
+    async generateAccessToken(userId: number, userRole: string) {
         return await this.jwtService.signAsync(
-            { id: userId },
+            { id: userId, role: userRole },
             { expiresIn: "20m" }
         );
     }
@@ -91,12 +91,12 @@ export class AuthService {
     }
     async getUserData(payload: Express.User) {
         // @ts-ignore
-        const { id } = payload;
+        const { id, role } = payload;
         const user = await this.userRepository.findOne({where: {id}, select: ["id"]});
         if (!user) {
             throw new UnauthorizedException();
         }
-        return { id: user.id, logged: true };
+        return { id: user.id, logged: true, role };
     }
     async refreshToken(request: Request, response: Response) {
         // @ts-ignore
@@ -116,11 +116,11 @@ export class AuthService {
         // const validated = await this.jwtService.verifyAsync(refreshToken, {
         //     secret: "refresh",
         // });
-        const newAccessToken = await this.generateAccessToken(tokenToValidate.user_id);
+        const newAccessToken = await this.generateAccessToken(tokenToValidate.user_id, tokenToValidate.user_role);
         const {refreshToken, refreshTokenExp} = await this.generateRefreshToken();
         // tokenToValidate.status = RefreshTokenStatus.used;
         await tokenToValidate.remove();
-        await this.refreshTokenRepository.create({user_id: userIdFromRequest, refresh_token: refreshToken, refresh_exp: refreshTokenExp}).save();
+        await this.refreshTokenRepository.create({user_id: userIdFromRequest, user_role: tokenToValidate.user_role,refresh_token: refreshToken, refresh_exp: refreshTokenExp}).save();
 
         // user.refreshToken = newRefreshToken;
         // await user.save();
@@ -192,5 +192,22 @@ export class AuthService {
             console.log(e)
             throw new ForbiddenException(e);
         }
+    }
+
+    async getUsers() {
+        const users = await this.userRepository.find({select: ["id", "email", "role"]});
+        return users;
+    }
+
+    async validateRole(id: number) {
+        const user = await this.userRepository.findOne(id);
+        return user.role === 'admin';
+    }
+
+    async issueAdminRole(userId?: number) {
+        const user = await this.userRepository.findOne(userId);
+        user.role = "admin";
+        await user.save();
+        return {message: "Пользователю выдана роль админа"}
     }
 }

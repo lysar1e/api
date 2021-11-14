@@ -15,6 +15,12 @@ export class Refresh extends BaseEntity {
 
     @Column({
         type: "text",
+        nullable: true
+    })
+    user_role: string;
+
+    @Column({
+        type: "text",
         nullable: false,
     })
     refresh_token: string;
