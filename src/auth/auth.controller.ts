@@ -39,7 +39,7 @@ export class AuthController {
     @Get("check")
     checkAccessTokenValidity(@Req() request: Request) {
         //@ts-ignore
-        return {message: "ok", role: request.user.role};
+        return this.authService.getUserData(request.user);
     }
 
     @UseGuards(AuthGuard("auth"))
@@ -76,4 +76,12 @@ export class AuthController {
     issueRole(@Body('userId') userId: string) {
         return this.authService.issueAdminRole(+userId);
     }
+
+    @UseGuards(AuthGuard("jwt"))
+    @Post("buy-sub")
+    buySub(@Req() request: Request) {
+        //@ts-ignore
+        return this.authService.buySub(request.user.id);
+    }
 }
+

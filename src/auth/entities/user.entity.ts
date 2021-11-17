@@ -26,4 +26,11 @@ export class User extends BaseEntity {
         default: "user"
     })
     role: string;
+
+    @Column({
+        type: "boolean",
+        nullable: false,
+        default: false
+    })
+    sub: boolean;
 }

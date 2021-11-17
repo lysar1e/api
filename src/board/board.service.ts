@@ -1,7 +1,7 @@
 import {
     BadRequestException,
     ForbiddenException,
-    Injectable
+    Injectable, UnauthorizedException
 } from '@nestjs/common';
 import { CreateBoardDto } from './dto/create-board.dto';
 import {InjectRepository} from "@nestjs/typeorm";
@@ -9,14 +9,26 @@ import {Board} from "./entities/board.entity";
 import {CreateTodoDto} from "./dto/create-todo.dto";
 import { v4 as uuidv4 } from 'uuid';
 import {DeleteTodoDto} from "./dto/delete-todo.dto";
+import {User} from "../auth/entities/user.entity";
 
 @Injectable()
 export class BoardService {
   constructor(
       @InjectRepository(Board) private boardRepository: typeof Board,
+      @InjectRepository(User) private userRepository: typeof User,
   ) {}
   async create(createBoardDto: CreateBoardDto, owner) {
-    await this.boardRepository.create({owner, name: createBoardDto.name}).save();
+      const user = await this.userRepository.findOne({where: {id: owner}, select: ["id", "sub"]});
+      if (!user) {
+          throw new UnauthorizedException();
+      }
+
+      const usersBoards = await this.boardRepository.find({where: {owner}});
+      if (user.sub || usersBoards.length < 1) {
+          await this.boardRepository.create({owner, name: createBoardDto.name}).save();
+      } else if (!user.sub && usersBoards.length > 0) {
+          throw new ForbiddenException("Can't add more than one board if you don't have subscription")
+      }
     return {message: "success"}
   }
 

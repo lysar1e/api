@@ -11,12 +11,14 @@ import {ResetPasswordDto} from "./dto/reset-password.dto";
 import { MailService } from 'src/mail/mail.service';
 import * as moment from "moment";
 import {Refresh} from "./entities/refresh.entity";
+import {Board} from "../board/entities/board.entity";
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User) private userRepository: typeof User,
         @InjectRepository(Refresh) private refreshTokenRepository: typeof Refresh,
+        @InjectRepository(Board) private boardRepository: typeof Board,
         private jwtService: JwtService,
         private mailService: MailService
     ) {}
@@ -92,11 +94,18 @@ export class AuthService {
     async getUserData(payload: Express.User) {
         // @ts-ignore
         const { id, role } = payload;
-        const user = await this.userRepository.findOne({where: {id}, select: ["id"]});
+        const user = await this.userRepository.findOne({where: {id}, select: ["id", "sub"]});
         if (!user) {
             throw new UnauthorizedException();
         }
-        return { id: user.id, logged: true, role };
+        const usersBoards = await this.boardRepository.find({where: {owner: id}});
+        let canAddMoreThanOneBoard = false;
+        if (user.sub || usersBoards.length < 1) {
+            canAddMoreThanOneBoard = true;
+        } else if (!user.sub && usersBoards.length > 0) {
+            canAddMoreThanOneBoard = false
+        }
+        return { id: user.id, logged: true, role, sub: canAddMoreThanOneBoard };
     }
     async refreshToken(request: Request, response: Response) {
         // @ts-ignore
@@ -209,5 +218,14 @@ export class AuthService {
         user.role = "admin";
         await user.save();
         return {message: "Пользователю выдана роль админа"}
+    }
+    async buySub(userId: number) {
+        const user = await this.userRepository.findOne({where: {id: userId}});
+        if (!user) {
+            throw new BadRequestException();
+        }
+        user.sub = true;
+        await user.save();
+        return {message: "success"}
     }
 }

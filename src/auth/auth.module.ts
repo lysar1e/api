@@ -9,11 +9,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import {MailModule} from "../mail/mail.module";
 import {Refresh} from "./entities/refresh.entity";
 import {ConfigModule, ConfigService} from "@nestjs/config";
+import {Board} from "../board/entities/board.entity";
 @Module({
   providers: [AuthService, JwtStrategy, AuthStrategy],
   controllers: [AuthController],
   imports: [
-    TypeOrmModule.forFeature([User, Refresh]),
+    TypeOrmModule.forFeature([User, Refresh, Board]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
