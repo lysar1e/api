@@ -19,7 +19,17 @@ export class BoardService {
     @InjectRepository(Board) private boardRepository: typeof Board,
     @InjectRepository(User) private userRepository: typeof User
   ) {}
-  async create(createBoardDto: CreateBoardDto, owner) {
+
+  validateBoardAccessToUser(board: Board, owner: number, text: string) {
+    if (
+      !board ||
+      (!board.contributors.includes(owner) && board.owner !== owner)
+    ) {
+      throw new ForbiddenException(text);
+    }
+  }
+
+  async create({ name }: CreateBoardDto, owner) {
     const user = await this.userRepository.findOne({
       where: { id: owner },
       select: ["id", "sub"],
@@ -30,9 +40,7 @@ export class BoardService {
 
     const usersBoards = await this.boardRepository.find({ where: { owner } });
     if (user.sub || usersBoards.length < 1) {
-      await this.boardRepository
-        .create({ owner, name: createBoardDto.name })
-        .save();
+      await this.boardRepository.create({ owner, name }).save();
     } else if (!user.sub && usersBoards.length > 0) {
       throw new ForbiddenException(
         "Can't add more than one board if you don't have subscription"
@@ -41,20 +49,20 @@ export class BoardService {
     return { message: "success" };
   }
 
-  async createTodo(createTodoDto: CreateTodoDto, owner) {
-    const board = await this.boardRepository.findOne(createTodoDto.boardId);
-    if (!board.contributors.includes(owner) && board.owner !== owner) {
-      throw new ForbiddenException(
-        "Ты не можешь создать за другого пользователя!"
-      );
-    }
-    if (!createTodoDto.text) {
+  async createTodo({ text, boardId }: CreateTodoDto, owner) {
+    const board = await this.boardRepository.findOne(boardId);
+    await this.validateBoardAccessToUser(
+      board,
+      owner,
+      "Ты не можешь создать за другого пользователя!"
+    );
+    if (!text) {
       throw new BadRequestException("Невозможно добавить пустую задачу!");
     }
     const id = await uuidv4();
     const todoObj = {
       id,
-      text: createTodoDto.text,
+      text,
       completed: false,
       important: false,
     };
@@ -64,10 +72,6 @@ export class BoardService {
   }
 
   async findAll(owner: number) {
-    // const boards = await this.boardRepository.find({where: {owner}, select: ["id", "owner", "name"]});
-    // const contributorBoard = await this.boardRepository.find({ where: {contributors: In([2, 7, 9]) }})
-    //  console.log(owner);
-    //  console.log(contributorBoard)
     const boards = await this.boardRepository.find({
       select: ["id", "owner", "name", "contributors"],
     });
@@ -85,21 +89,16 @@ export class BoardService {
 
   async findOne(id: number, owner: number) {
     const board = await this.boardRepository.findOne({ where: { id } });
-    if (
-      !board ||
-      (board.contributors.includes(owner) === false && board.owner !== owner)
-    ) {
-      throw new ForbiddenException("Нет Доступа к этой доске!");
-    }
-    // if (!board || board.contributors.includes(owner) === false)
-    // console.log(board.contributors.includes(owner));
+    await this.validateBoardAccessToUser(
+      board,
+      owner,
+      "Нет Доступа к этой доске!"
+    );
     return board;
   }
 
   async completeTodo(id: string, boardId: number) {
-    const board = await this.boardRepository.findOne({
-      where: { id: boardId },
-    });
+    const board = await this.boardRepository.findOne(boardId);
     if (!board) {
       throw new BadRequestException();
     }
@@ -120,12 +119,12 @@ export class BoardService {
     return { message: "success" };
   }
 
-  async remove(dto: DeleteTodoDto) {
-    const board = await this.boardRepository.findOne(dto.boardId);
+  async remove({ boardId, todoId }: DeleteTodoDto) {
+    const board = await this.boardRepository.findOne(boardId);
     if (!board) {
       throw new BadRequestException();
     }
-    const todo = board.todos.find((item) => item.id === dto.todoId);
+    const todo = board.todos.find((item) => item.id === todoId);
     const index = board.todos.indexOf(todo);
     board.todos.splice(index, 1);
     await board.save();
@@ -142,16 +141,10 @@ export class BoardService {
     return { message: "Доска удалена" };
   }
 
-  // async validateUser(board: Board, userId: number) {
-  //     if (!board.contributors.includes(userId) && board.owner !== userId) {
-  //         throw new ForbiddenException("Ты не можешь создать за другого пользователя!");
-  //         return;
-  //     }
-  // }
-  async editTodoText(dto: EditTodoTextDto) {
-    const board = await this.boardRepository.findOne(dto.boardId);
-    const todo = board.todos.find((item) => item.id === dto.todoId);
-    todo.text = dto.newText;
+  async editTodoText({ boardId, newText, todoId }: EditTodoTextDto) {
+    const board = await this.boardRepository.findOne(boardId);
+    const todo = board.todos.find((item) => item.id === todoId);
+    todo.text = newText;
     await board.save();
     return { message: "success" };
   }
