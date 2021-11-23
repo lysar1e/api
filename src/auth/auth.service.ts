@@ -67,7 +67,7 @@ export class AuthService {
     response.clearCookie("refresh", {
       domain: process.env.DOMAIN,
       path: "/",
-    }); //TODO create method for deleting cookie
+    });
     response.clearCookie("access", { domain: process.env.DOMAIN, path: "/" });
   }
 
