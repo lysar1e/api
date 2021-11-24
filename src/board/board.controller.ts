@@ -17,6 +17,7 @@ import { Request } from "express";
 import { CreateTodoDto } from "./dto/create-todo.dto";
 import { DeleteTodoDto } from "./dto/delete-todo.dto";
 import { EditTodoTextDto } from "./dto/edit-todo-text.dto";
+import { EditBoardNameDto } from "./dto/edit-board-name.dto";
 
 @Controller("board")
 export class BoardController {
@@ -79,5 +80,11 @@ export class BoardController {
   @Post("todo/edit-text")
   editTodoText(@Body() dto: EditTodoTextDto) {
     return this.boardService.editTodoText(dto);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Post("edit-name")
+  editBoardName(@Body() dto: EditBoardNameDto) {
+    return this.boardService.editBoardName(dto);
   }
 }

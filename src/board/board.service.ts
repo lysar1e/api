@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { DeleteTodoDto } from "./dto/delete-todo.dto";
 import { User } from "../auth/entities/user.entity";
 import { EditTodoTextDto } from "./dto/edit-todo-text.dto";
+import { EditBoardNameDto } from "./dto/edit-board-name.dto";
 
 @Injectable()
 export class BoardService {
@@ -145,6 +146,13 @@ export class BoardService {
     const board = await this.boardRepository.findOne(boardId);
     const todo = board.todos.find((item) => item.id === todoId);
     todo.text = newText;
+    await board.save();
+    return { message: "success" };
+  }
+
+  async editBoardName({ boardId, newBoardName }: EditBoardNameDto) {
+    const board = await this.boardRepository.findOne(boardId);
+    board.name = newBoardName;
     await board.save();
     return { message: "success" };
   }
